@@ -1,13 +1,15 @@
 from datetime import datetime
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask, request, render_template, redirect, url_for, flash
 import openpyxl
 import os
 import emails
+import sensitive_info
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
-
+app.secret_key = sensitive_info.secret_key
 data_by_person = {}
+
 
 def parse_excel(file_path):
     global data_by_person
@@ -24,14 +26,16 @@ def parse_excel(file_path):
         first_name = row[2].capitalize()
         exam = row[3]
         date = row[4]
-        room_number = row[5]
-        proctor = row[6]
+        time = row[5]
+        room_number = row[6]
+        proctor = row[7]
 
         full_name = f"{first_name} {last_name}"
         exam_details = {
             "exam": exam,
             "date": date,
             "number": number,
+            "am_pm": time,
             "room_number": room_number,
             "proctor": proctor
         }
@@ -40,9 +44,11 @@ def parse_excel(file_path):
             data_by_person[full_name] = []
         data_by_person[full_name].append(exam_details)
 
+
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -58,16 +64,23 @@ def upload_file():
         return redirect(url_for('query'))
     return redirect(request.url)
 
+
 @app.route('/query', methods=['GET', 'POST'])
 def query():
     if request.method == 'POST':
-        first_name = request.form['first_name'].capitalize()
-        last_name = request.form['last_name'].capitalize()
-        full_name = f"{first_name} {last_name}"
-        results = data_by_person.get(full_name, "No data found for this person")
-        emails.send_emails(data_by_person)
+        full_name = f"{request.form['full_name']}"    
+        results = data_by_person.get(
+            full_name, "No data found for this person")
         return render_template('query.html', results=results, name=full_name)
     return render_template('query.html')
+
+@app.route('/send_email', methods=['POST'])
+def send_email():
+    # Implement your email sending logic here
+    emails.send_emails(data_by_person)
+    # Redirect back to the query page with a success message
+    return redirect(url_for('query', message='Emails have been sent successfully!'))
+
 
 if __name__ == '__main__':
     if not os.path.exists(app.config['UPLOAD_FOLDER']):

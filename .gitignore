@@ -1,2 +1,4 @@
 .venv
 sensitive_info.py
+*.pyc
+/uploads

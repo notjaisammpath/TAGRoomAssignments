@@ -3,12 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload Excel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .file-input-container {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: inline-block;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .custom-file-upload {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: inline-block;
+        }
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        input[type="submit"]:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
-    <h1>Upload Excel File</h1>
-    <form action="/upload" method="post" enctype="multipart/form-data">
-        <input type="file" name="file">
-        <input type="submit" value="Upload">
-    </form>
+    <div class="container">
+        <h1>Upload Excel File</h1>
+        <form action="/upload" method="post" enctype="multipart/form-data">
+            <div class="file-input-container">
+                <label for="file-upload" class="custom-file-upload">
+                    Choose File
+                </label>
+                <input id="file-upload" type="file" name="file">
+                <span id="file-chosen">No file chosen</span>
+            </div>
+            <input type="submit" value="Upload" id="upload-button" disabled>
+        </form>
+    </div>
+    <script>
+        const fileUpload = document.getElementById('file-upload');
+        const fileChosen = document.getElementById('file-chosen');
+        const uploadButton = document.getElementById('upload-button');
+
+        fileUpload.addEventListener('change', function() {
+            fileChosen.textContent = this.files[0].name;
+            uploadButton.disabled = false;
+        });
+    </script>
 </body>
 </html>

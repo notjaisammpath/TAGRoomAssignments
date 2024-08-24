@@ -1,31 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Query Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            margin: 10px 0 5px;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        input[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .results {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .results h2 {
+            color: #333;
+        }
+
+        .results p {
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .styled-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 25px 0;
+            font-size: 18px;
+            text-align: left;
+        }
+        .styled-table thead tr {
+            background-color: #009879;
+            color: #ffffff;
+            text-align: left;
+        }
+        .styled-table th,
+        .styled-table td {
+            padding: 12px 15px;
+        }
+        .styled-table tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+        .styled-table tbody tr:nth-of-type(even) {
+            background-color: #f3f3f3;
+        }
+        .styled-table tbody tr:last-of-type {
+            border-bottom: 2px solid #009879;
+        }
+        .styled-table tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Query Data by Name</h1>
-    <form action="/query" method="post">
-        <label for="first_name">First Name:</label>
-        <input type="text" id="first_name" name="first_name" required>
-        <br>
-        <label for="last_name">Last Name:</label>
-        <input type="text" id="last_name" name="last_name" required>
-        <br>
-        <input type="submit" value="Query">
-    </form>
-    {% if results %}
-        <h2>Results for {{ name }}:</h2>
-        {% if results == "No data found for this person" %}
+    <div class="container">
+        <h1>Send Emails or Search for a Student</h1>
+        <form action="/send_email" method="post">
+            <input type="hidden" name="first_name" value="{{ request.form.first_name }}">
+            <input type="hidden" name="last_name" value="{{ request.form.last_name }}">
+            <input type="submit" value="Send Emails">
+        </form>
+        <form action="/query" method="post">
+            <label for="full_name">Full Name:</label>
+            <input type="text" id="full_name" name="full_name" required>
+            <input type="submit" value="Search">
+        </form>
+        {% if results %}
+        <div class="results">
+            <h2>Results for {{ name }}:</h2>
+            {% if results == "No data found for this person" %}
             <p>{{ results }}</p>
-        {% else %}
-            <ul>
-                {% for exam in results %}
-                    <li>Exam: {{ exam.exam }}, Number: {{ exam.number }}, Room: {{ exam.room_number }}, Proctor: {{ exam.proctor }}</li>
+            {% else %}
+            <table class = "styled-table">
+                <tr>
+                    <th>Exam</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Number</th>
+                    <th>Room Number</th>
+                    <th>Proctor</th>
+                </tr>
+                {% for result in results %}
+                <tr>
+                    <td>{{ result.exam }}</td>
+                    <td class="date-cell">{{ result.date }}</td>
+                    <td>{{ result.am_pm }}</td>
+                    <td class="number-cell">{{ result.number }}</td>
+                    <td class="room-number-cell">{{ result.room_number }}</td>
+                    <td>{{ result.proctor }}</td>
+                </tr>
                 {% endfor %}
-            </ul>
+            </table>
+            {% endif %}
+        </div>
+        
         {% endif %}
-    {% endif %}
+    </div>
+    <script>
+        // Display alert message if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const message = urlParams.get('message');
+        if (message) {
+            alert(message);
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+        const dateCells = document.querySelectorAll('.date-cell');
+        dateCells.forEach(cell => {
+            const dateStr = cell.textContent;
+            const dateObj = new Date(dateStr);
+            const formattedDate = dateObj.toLocaleDateString('en-US', {
+                month: 'long',
+                day: 'numeric'
+            });
+            cell.textContent = formattedDate;
+        });
+        // Remove decimals from number and room number
+        const numberCells = document.querySelectorAll('.number-cell');
+        numberCells.forEach(cell => {
+            const number = parseFloat(cell.textContent);
+            cell.textContent = Math.floor(number);
+        });
+
+        const roomNumberCells = document.querySelectorAll('.room-number-cell');
+        roomNumberCells.forEach(cell => {
+            const roomNumber = parseFloat(cell.textContent);
+            cell.textContent = Math.floor(roomNumber);
+        });
+    });
+    </script>
 </body>
+
 </html>
