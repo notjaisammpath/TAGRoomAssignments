@@ -1,0 +1,3 @@
+([('Schedulocity',
+   '/Users/jaisammpath/Documents/spaudiomodeltest/TAGRoomAssignments/dist/Schedulocity',
+   'EXECUTABLE')],)

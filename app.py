@@ -1,7 +1,23 @@
 import sys
 import os
 import sensitive_info
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QGridLayout, QWidget, QPushButton, QFileDialog, QLineEdit, QLabel, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox, QStackedWidget
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QComboBox,
+    QVBoxLayout,
+    QGridLayout,
+    QWidget,
+    QPushButton,
+    QFileDialog,
+    QLineEdit,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QMessageBox,
+    QStackedWidget,
+)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QPalette, QColor
 import openpyxl
@@ -11,6 +27,8 @@ from email.mime.text import MIMEText
 
 data_by_person = {}
 emails_by_person = {}
+exam_types = ["Please Select", "AP", "PSAT", "SAT"]
+exam = None
 
 
 class UploadPage(QWidget):
@@ -24,14 +42,55 @@ class UploadPage(QWidget):
         self.layout.addWidget(self.title)
 
         self.instructions = QLabel(
-            "Please upload both the exam schedule file and the email file.")
+            "Please double check that both files are formatted correctly before uploading. \n If files aren't formated correctly, the program will crash instantly."
+        )
         self.instructions.setFont(QFont("Segoe UI", 12))
         self.instructions.setAlignment(Qt.AlignCenter)
         self.layout.addWidget(self.instructions)
 
-        self.upload_exam_button = QPushButton("Upload Exam Schedule File")
+        # Add dropdown for exam type
+        self.exam_type_label = QLabel("Select Exam Type:")
+        self.exam_type_label.setFont(QFont("Segoe UI", 12))
+        self.layout.addWidget(self.exam_type_label)
+
+        self.exam_type_dropdown = QComboBox()
+        self.exam_type_dropdown.addItems(exam_types)
+        self.exam_type_dropdown.setStyleSheet(
+            """
+            QComboBox {
+                padding: 10px;
+                font-size: 16px;
+                background-color: #2D2D30;
+                color: #FFFFFF;
+                border: 1px solid #555555;
+                border-radius: 5px;
+            }
+            QComboBox:hover {
+                background-color: #3C3C3C;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: url(down_arrow.png);  /* Ensure you have a down_arrow.png in your project directory */
+                width: 14px;
+                height: 14px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2D2D30;
+                border: 1px solid #555555;
+                selection-background-color: #4CAF50;  /* Green accent color */
+                selection-color: #FFFFFF;
+            }
+        """
+        )
+        self.layout.addWidget(self.exam_type_dropdown)
+        
+
+        self.upload_exam_button = QPushButton("Upload Exam Roster Spreadsheet")
         self.upload_exam_button.clicked.connect(self.upload_exam_file)
-        self.upload_exam_button.setStyleSheet("""
+        self.upload_exam_button.setStyleSheet(
+            """
             QPushButton {
                 padding: 15px;
                 font-size: 16px;
@@ -43,12 +102,14 @@ class UploadPage(QWidget):
             QPushButton:hover {
                 background-color: #D1D1D1;
             }
-        """)
+        """
+        )
         self.layout.addWidget(self.upload_exam_button)
 
-        self.upload_email_button = QPushButton("Upload Email File")
+        self.upload_email_button = QPushButton("Upload Student to Email Spreadsheet")
         self.upload_email_button.clicked.connect(self.upload_email_file)
-        self.upload_email_button.setStyleSheet("""
+        self.upload_email_button.setStyleSheet(
+            """
             QPushButton {
                 padding: 15px;
                 font-size: 16px;
@@ -60,7 +121,8 @@ class UploadPage(QWidget):
             QPushButton:hover {
                 background-color: #D1D1D1;
             }
-        """)
+        """
+        )
         self.layout.addWidget(self.upload_email_button)
 
         self.layout.addStretch()
@@ -71,31 +133,47 @@ class UploadPage(QWidget):
         self.email_file_uploaded = False
         self.exam_file_uploaded = False
 
+    def get_selected_exam_type(self):
+        return self.exam_type_dropdown.currentText()
+    
     def upload_exam_file(self):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Exam Schedule File", "", "Excel Files (*.xlsx);;All Files (*)", options=options)
+            self,
+            "Open Exam Schedule File",
+            "",
+            "Excel Files (*.xlsx);;All Files (*)",
+            options=options,
+        )
         if file_path:
             self.parse_exam_file(file_path)
             QMessageBox.information(
-                self, "Success", "Exam schedule file uploaded and parsed successfully!")
+                self, "Success", "Exam schedule file uploaded and parsed successfully!"
+            )
             self.exam_file_uploaded = True
             self.check_files_and_navigate()
 
     def upload_email_file(self):
         options = QFileDialog.Options()
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Open Email File", "", "Excel Files (*.xlsx);;All Files (*)", options=options)
+            self,
+            "Open Email File",
+            "",
+            "Excel Files (*.xlsx);;All Files (*)",
+            options=options,
+        )
         if file_path:
             self.parse_email_file(file_path)
             QMessageBox.information(
-                self, "Success", "Email file uploaded and parsed successfully!")
+                self, "Success", "Email file uploaded and parsed successfully!"
+            )
             self.email_file_uploaded = True
             self.check_files_and_navigate()
 
     def check_files_and_navigate(self):
-        if self.email_file_uploaded and self.exam_file_uploaded:
+        if self.email_file_uploaded and self.exam_file_uploaded and self.get_selected_exam_type() != "Please Select":
             self.parent().setCurrentIndex(1)
+            self.parent().parent().set_selected_exam_type(self.get_selected_exam_type())
 
     def parse_exam_file(self, file_path):
         global data_by_person
@@ -125,7 +203,7 @@ class UploadPage(QWidget):
                 "number": number,
                 "am_pm": time,
                 "room_number": room_number,
-                "proctor": proctor
+                "proctor": proctor,
             }
 
             if full_name not in data_by_person:
@@ -165,7 +243,8 @@ class SearchPage(QWidget):
 
         self.search_button = QPushButton("Search")
         self.search_button.clicked.connect(self.search_student)
-        self.search_button.setStyleSheet("""
+        self.search_button.setStyleSheet(
+            """
             QPushButton {
                 padding: 15px;
                 font-size: 16px;
@@ -177,19 +256,22 @@ class SearchPage(QWidget):
             QPushButton:hover {
                 background-color: #D1D1D1;
             }
-        """)
+        """
+        )
         self.layout.addWidget(self.search_button)
 
         self.results_table = QTableWidget()
         self.results_table.setColumnCount(6)
         self.results_table.setHorizontalHeaderLabels(
-            ["Exam", "Date", "Time", "Number", "Room Number", "Proctor"])
+            ["Exam", "Date", "Time", "Number", "Room Number", "Proctor"]
+        )
         self.results_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.results_table)
 
         self.email_button = QPushButton("Send Emails")
         self.email_button.clicked.connect(self.send_emails)
-        self.email_button.setStyleSheet("""
+        self.email_button.setStyleSheet(
+            """
             QPushButton {
                 padding: 15px;
                 font-size: 16px;
@@ -201,61 +283,67 @@ class SearchPage(QWidget):
             QPushButton:hover {
                 background-color: #D1D1D1;
             }
-        """)
+        """
+        )
         self.layout.addWidget(self.email_button)
 
         self.setLayout(self.layout)
 
     def search_student(self):
-        full_name = ' '.join(part.capitalize()
-                             for part in self.search_input.text().strip().split())
-        results = data_by_person.get(
-            full_name, "No data found for this person")
+        full_name = " ".join(
+            part.capitalize() for part in self.search_input.text().strip().split()
+        )
+        results = data_by_person.get(full_name, "No data found for this person")
         self.display_results(results, full_name)
 
     def display_results(self, results, name):
         if results == "No data found for this person":
-            QMessageBox.information(
-                self, "No Data", f"No data found for {name}")
+            QMessageBox.information(self, "No Data", f"No data found for {name}")
             self.results_table.setRowCount(0)
         else:
             self.results_table.setRowCount(len(results))
             for row_idx, result in enumerate(results):
+                self.results_table.setItem(row_idx, 0, QTableWidgetItem(result["exam"]))
                 self.results_table.setItem(
-                    row_idx, 0, QTableWidgetItem(result["exam"]))
-                self.results_table.setItem(row_idx, 1, QTableWidgetItem(
-                    result["date"].strftime('%B %d, %Y')))
+                    row_idx, 1, QTableWidgetItem(result["date"].strftime("%B %d, %Y"))
+                )
                 self.results_table.setItem(
-                    row_idx, 2, QTableWidgetItem(result["am_pm"]))
+                    row_idx, 2, QTableWidgetItem(result["am_pm"])
+                )
                 self.results_table.setItem(
-                    row_idx, 3, QTableWidgetItem(str(int(result["number"]))))
+                    row_idx, 3, QTableWidgetItem(str(int(result["number"])))
+                )
                 self.results_table.setItem(
-                    row_idx, 4, QTableWidgetItem(str(int(result["room_number"]))))
+                    row_idx, 4, QTableWidgetItem(str(int(result["room_number"])))
+                )
                 self.results_table.setItem(
-                    row_idx, 5, QTableWidgetItem(result["proctor"]))
+                    row_idx, 5, QTableWidgetItem(result["proctor"])
+                )
 
     def send_emails(self):
-        self.send_batch_emails(data_by_person, emails_by_person)
-        QMessageBox.information(self, "Emails Sent",
-                                "Emails have been sent successfully!")
+        self.send_batch_emails(data_by_person, emails_by_person, self.parent().parent().get_selected_exam_type())
+        QMessageBox.information(
+            self, "Emails Sent", "Emails have been sent successfully!"
+        )
 
-    def send_batch_emails(self, data_by_person, emails_by_person):
+    def send_batch_emails(self, data_by_person, emails_by_person, exam_type):
         sender_email = sensitive_info.test_sender_email
         password = sensitive_info.test_sender_password
 
         for student, exams in data_by_person.items():
             receiver_email = emails_by_person.get(student)
             if not receiver_email:
-                QMessageBox.warning(self, "Email Not Found",
-                                    f"No email found for {student}")
+                QMessageBox.warning(
+                    self, "Email Not Found", f"No email found for {student}"
+                )
                 continue
 
-            subject = f"Your AP Exam Schedule - {student}"
+            subject = f"Your {exam_type} Exam Schedule - {student}"
             body = f"""
                 <!DOCTYPE html>
             <html>
             <head>
-            <title>AP Exam Schedule for {student}</title>
+            <title>{exam_type} Exam Schedule for {student}</title>
             <style>
             table {{
             width: 100%;
@@ -278,10 +366,10 @@ class SearchPage(QWidget):
             </head>
             <body>   
 
-            <h2>AP Exam Schedule for {student}</h2>
+            <h2> {exam_type} Exam Schedule for {student}</h2>
             <table>
             <tr>
-                <th>AP Exam Name</th>
+                <th>Exam Name</th>
                 <th>Date</th>
                 <th>Time</th>
                 <th>Number</th>
@@ -308,10 +396,10 @@ class SearchPage(QWidget):
 
             # Send the email
             msg = MIMEMultipart()
-            msg['From'] = sender_email
-            msg['To'] = receiver_email
-            msg['Subject'] = subject
-            msg.attach(MIMEText(body, 'html'))
+            msg["From"] = sender_email
+            msg["To"] = receiver_email
+            msg["Subject"] = subject
+            msg.attach(MIMEText(body, "html"))
             smtp_server = "smtp.gmail.com"
             port = 587
 
@@ -322,7 +410,9 @@ class SearchPage(QWidget):
                 server.sendmail(sender_email, receiver_email, msg.as_string())
                 print("Email sent successfully!")
             except Exception as e:
-                print(f"Failed to send email to {receiver_email}: {e}")
+                QMessageBox.warning(
+                    self, f"Failed to send email to {receiver_email}: {e}"
+                )
 
 
 class MainWindow(QMainWindow):
@@ -343,7 +433,8 @@ class MainWindow(QMainWindow):
 
         self.central_widget.setCurrentIndex(0)
 
-        self.setStyleSheet("""
+        self.setStyleSheet(
+            """
     QMainWindow {
         background-color: #2D2D30;
     }
@@ -421,10 +512,18 @@ class MainWindow(QMainWindow):
         color: #FFFFFF;
         border: 1px solid #555555;
     }
-""")
+"""
+        )
+        self.selected_exam_type = None  # Add this line to store the selected exam type
+
+    def set_selected_exam_type(self, exam_type):
+        self.selected_exam_type = exam_type
+
+    def get_selected_exam_type(self):
+        return self.selected_exam_type
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     main_window = MainWindow()
     main_window.show()
