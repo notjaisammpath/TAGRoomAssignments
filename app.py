@@ -393,8 +393,8 @@ class SearchPage(QWidget):
                     <td>{exam['exam']}</td>
                     <td>{exam['date'].strftime('%B %d, %Y')}</td>
                     <td>{exam['am_pm']}</td>
-                    <td>{exam['number']}</td>
-                    <td>{exam['room_number']}</td>
+                    <td>{round(exam['number'])}</td>
+                    <td>{round(exam['room_number'])}</td>
                     <td>{exam['proctor']}</td>
                 </tr>
                 """
