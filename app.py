@@ -1,5 +1,4 @@
 import sys
-import os
 import sensitive_info
 from PyQt5.QtWidgets import (
     QApplication,
@@ -72,13 +71,14 @@ class UploadPage(QWidget):
                 border: none;
             }
             QComboBox::down-arrow {
-                image: url(down_arrow.png);  /* Ensure you have a down_arrow.png in your project directory */
+                border: none;
                 width: 14px;
                 height: 14px;
             }
             QComboBox QAbstractItemView {
                 background-color: #2D2D30;
                 border: 1px solid #555555;
+                color: #FFFFFF;
                 selection-background-color: #4CAF50;  /* Green accent color */
                 selection-color: #FFFFFF;
             }
@@ -147,9 +147,11 @@ class UploadPage(QWidget):
         )
         if file_path:
             self.parse_exam_file(file_path)
-            QMessageBox.information(
-                self, "Success", "Exam schedule file uploaded and parsed successfully!"
-            )
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Success")
+            msg_box.setText("Exam schedule file uploaded and parsed successfully!")
+            msg_box.setStyleSheet("QLabel { color: black; }")
+            msg_box.exec_()
             self.exam_file_uploaded = True
             self.check_files_and_navigate()
 
@@ -164,9 +166,11 @@ class UploadPage(QWidget):
         )
         if file_path:
             self.parse_email_file(file_path)
-            QMessageBox.information(
-                self, "Success", "Email file uploaded and parsed successfully!"
-            )
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Success")
+            msg_box.setText("Email file uploaded and parsed successfully!")
+            msg_box.setStyleSheet("QLabel { color: black; }")
+            msg_box.exec_()
             self.email_file_uploaded = True
             self.check_files_and_navigate()
 
@@ -268,7 +272,7 @@ class SearchPage(QWidget):
         self.results_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.layout.addWidget(self.results_table)
 
-        self.email_button = QPushButton("Send Emails")
+        self.email_button = QPushButton("Send All Emails")
         self.email_button.clicked.connect(self.send_emails)
         self.email_button.setStyleSheet(
             """
@@ -298,7 +302,11 @@ class SearchPage(QWidget):
 
     def display_results(self, results, name):
         if results == "No data found for this person":
-            QMessageBox.information(self, "No Data", f"No data found for {name}")
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("No Data")
+            msg_box.setText(f"No data found for {name}")
+            msg_box.setStyleSheet("QLabel { color: black; }")
+            msg_box.exec_()
             self.results_table.setRowCount(0)
         else:
             self.results_table.setRowCount(len(results))
@@ -322,9 +330,11 @@ class SearchPage(QWidget):
 
     def send_emails(self):
         self.send_batch_emails(data_by_person, emails_by_person, self.parent().parent().get_selected_exam_type())
-        QMessageBox.information(
-            self, "Emails Sent", "Emails have been sent successfully!"
-        )
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Emails Sent")
+        msg_box.setText("Emails have been sent successfully!")
+        msg_box.setStyleSheet("QLabel { color: black; }")
+        msg_box.exec_()
 
     def send_batch_emails(self, data_by_person, emails_by_person, exam_type):
         sender_email = sensitive_info.test_sender_email
