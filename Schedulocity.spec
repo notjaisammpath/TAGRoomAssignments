@@ -3,7 +3,7 @@
 
 a = Analysis(
     ['app.py'],
-    pathex=[],
+    pathex=["C:\\Users\\theaw\\Documents\\TAGRoomAssignments"],
     binaries=[],
     datas=[],
     hiddenimports=['openpyxl', 'PyQt5'],
@@ -34,5 +34,16 @@ exe = EXE(
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
+    icon="icon.ico",
     entitlements_file=None,
+)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='Schedulocity',
 )

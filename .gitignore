@@ -2,3 +2,4 @@
 sensitive_info.py
 *.pyc
 /uploads
+dist.zip
